@@ -1,97 +1,47 @@
-'use strict';
-let makeOrdinal = require('./makeOrdinal');
-let myIsFinite = require('./isFinite');
-let isSafeNumber = require('./isSafeNumber');
-var CountNumber;
-(function (CountNumber) {
-    CountNumber[CountNumber["TEN"] = 10] = "TEN";
-    CountNumber[CountNumber["ONE_HUNDRED"] = 100] = "ONE_HUNDRED";
-    CountNumber[CountNumber["ONE_THOUSAND"] = 1000] = "ONE_THOUSAND";
-    CountNumber[CountNumber["ONE_MILLION"] = 1000000] = "ONE_MILLION";
-    CountNumber[CountNumber["ONE_BILLION"] = 1000000000] = "ONE_BILLION";
-    CountNumber[CountNumber["ONE_TRILLION"] = 1000000000000] = "ONE_TRILLION";
-    CountNumber[CountNumber["ONE_QUADRILLION"] = 1000000000000000] = "ONE_QUADRILLION";
-    CountNumber[CountNumber["MAX"] = 9007199254740992] = "MAX";
-})(CountNumber || (CountNumber = {}));
-let LESS_THAN_TWENTY = [
-    'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'
-];
-let TENTHS_LESS_THAN_HUNDRED = [
-    'zero', 'ten', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'
-];
-/**
- * Converts an integer into words.
- * If number is decimal, the decimals will be removed.
- * @example toWords(12) => 'twelve'
- * @param {number|string} number
- * @param {boolean} [asOrdinal] - Deprecated, use toWordsOrdinal() instead!
- * @returns {string}
- */
-function toWords(number, asOrdinal) {
-    let words;
-    let num = parseInt(number, 10);
-    if (!myIsFinite(num)) {
-        throw new TypeError('Not a finite number: ' + number + ' (' + typeof number + ')');
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var roleUser;
+(function (roleUser) {
+    roleUser["admin"] = "admin";
+    roleUser["moderator"] = "moderator";
+    roleUser["user"] = "user";
+})(roleUser || (roleUser = {}));
+var genderUser;
+(function (genderUser) {
+    genderUser["female"] = "female";
+    genderUser["male"] = "male";
+})(genderUser || (genderUser = {}));
+function assertsIsApiResponse(data) {
+    if (!data ||
+        typeof data !== 'object' ||
+        !('users' in data) ||
+        !Array.isArray(data.users) ||
+        !('total' in data)) {
+        throw new Error("Invalid API response structure");
     }
-    if (!isSafeNumber(num)) {
-        throw new RangeError('Input is not a safe number, it’s either too large or too small.');
-    }
-    words = generateWords(num);
-    return asOrdinal ? makeOrdinal(words) : words;
 }
-function generateWords(number, words = []) {
-    let remainder = 0;
-    let word = '';
-    // We’re done
-    if (number === 0) {
-        return !words ? 'zero' : words.join(' ').replace(/,$/, '');
-    }
-    // First run
-    // If negative, prepend “minus”
-    if (number < 0) {
-        words.push('minus');
-        number = Math.abs(number);
-    }
-    if (number < 20) {
-        remainder = 0;
-        word = LESS_THAN_TWENTY[number];
-    }
-    else if (number < CountNumber.ONE_HUNDRED) {
-        remainder = number % CountNumber.TEN;
-        word = TENTHS_LESS_THAN_HUNDRED[Math.floor(number / CountNumber.TEN)];
-        // In case of remainder, we need to handle it here to be able to add the “-”
-        if (remainder) {
-            word += '-' + LESS_THAN_TWENTY[remainder];
-            remainder = 0;
+function getUsers() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const res = yield fetch('https://dummyjson.com/users');
+            if (!res.ok) {
+                throw new Error(`${res.status}`);
+            }
+            const data = yield res.json();
+            assertsIsApiResponse(data);
+            return data;
         }
-    }
-    else if (number < CountNumber.ONE_THOUSAND) {
-        remainder = number % CountNumber.ONE_HUNDRED;
-        word = generateWords(Math.floor(number / CountNumber.ONE_HUNDRED)) + ' hundred';
-    }
-    else if (number < CountNumber.ONE_MILLION) {
-        remainder = number % CountNumber.ONE_THOUSAND;
-        word = generateWords(Math.floor(number / CountNumber.ONE_THOUSAND)) + ' thousand,';
-    }
-    else if (number < CountNumber.ONE_BILLION) {
-        remainder = number % CountNumber.ONE_MILLION;
-        word = generateWords(Math.floor(number / CountNumber.ONE_MILLION)) + ' million,';
-    }
-    else if (number < CountNumber.ONE_TRILLION) {
-        remainder = number % CountNumber.ONE_BILLION;
-        word = generateWords(Math.floor(number / CountNumber.ONE_BILLION)) + ' billion,';
-    }
-    else if (number < CountNumber.ONE_QUADRILLION) {
-        remainder = number % CountNumber.ONE_TRILLION;
-        word = generateWords(Math.floor(number / CountNumber.ONE_TRILLION)) + ' trillion,';
-    }
-    else if (number <= CountNumber.MAX) {
-        remainder = number % CountNumber.ONE_QUADRILLION;
-        word = generateWords(Math.floor(number / CountNumber.ONE_QUADRILLION)) +
-            ' quadrillion,';
-    }
-    words.push(word);
-    return generateWords(remainder, words);
+        catch (error) {
+            console.error("Failed to fetch users:", error);
+            throw error;
+        }
+    });
 }
-module.exports = toWords;
